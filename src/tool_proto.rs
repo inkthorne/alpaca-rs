@@ -186,6 +186,7 @@ mod tests {
         tool.add_parameter("param1", AlpacaToolParameterType::String);
 
         let pretty_string = tool.to_string_pretty();
+        println!("{}", pretty_string);
         assert!(pretty_string.contains("test_func"));
         assert!(pretty_string.contains("param1"));
         assert!(pretty_string.contains("string"));

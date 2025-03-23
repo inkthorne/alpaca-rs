@@ -252,6 +252,39 @@ mod tests {
         );
     }
 
+    /// Tests the to_string_pretty method of `AlpacaToolCall`.
+    ///
+    /// Verifies that the method produces a correctly formatted JSON string
+    /// that accurately represents the tool call's content.
+    #[test]
+    fn test_to_string_pretty() {
+        // Create a tool call with a function and arguments
+        let mut tool_call = AlpacaToolCall::new();
+        tool_call
+            .set_function("search")
+            .add_argument("query", Value::String("rust programming".to_string()))
+            .add_argument("max_results", Value::Number(serde_json::Number::from(10)));
+
+        // Get the pretty-printed string
+        let pretty_json = tool_call.to_string_pretty();
+        println!("{}", pretty_json);
+
+        // Verify it's properly formatted JSON
+        let parsed_value: Value = serde_json::from_str(&pretty_json).expect("Should be valid JSON");
+
+        // Check that the original data is preserved
+        assert_eq!(parsed_value["function"].as_str(), Some("search"));
+        assert_eq!(
+            parsed_value["arguments"]["query"].as_str(),
+            Some("rust programming")
+        );
+        assert_eq!(parsed_value["arguments"]["max_results"].as_i64(), Some(10));
+
+        // Verify the string contains formatting (newlines and indentation)
+        assert!(pretty_json.contains("\n"));
+        assert!(pretty_json.contains("  ")); // Check for indentation
+    }
+
     /// Tests a complete workflow with `AlpacaToolCall`.
     ///
     /// Verifies that an instance can be created from JSON, modified with
