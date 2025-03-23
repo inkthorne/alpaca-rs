@@ -33,7 +33,7 @@ impl AlpacaToolCall {
     ///
     /// * `Ok(AlpacaToolCall)` - If the JSON was successfully parsed
     /// * `Err(())` - If the JSON parsing failed
-    pub fn from_string(json: &str) -> Result<AlpacaToolCall, ()> {
+    pub fn from_str(json: &str) -> Result<AlpacaToolCall, ()> {
         let object = serde_json::from_str(json);
         match object {
             Ok(object) => Ok(AlpacaToolCall { object }),
@@ -135,7 +135,7 @@ mod tests {
     #[test]
     fn test_from_string_valid() {
         let json = r#"{"function":"get_weather","arguments":{"location":"New York"}}"#;
-        let result = AlpacaToolCall::from_string(json);
+        let result = AlpacaToolCall::from_str(json);
         assert!(result.is_ok());
 
         let tool_call = result.unwrap();
@@ -152,7 +152,7 @@ mod tests {
     #[test]
     fn test_from_string_invalid() {
         let invalid_json = r#"{"function":"get_weather","arguments":{"location"}"#; // Missing value
-        let result = AlpacaToolCall::from_string(invalid_json);
+        let result = AlpacaToolCall::from_str(invalid_json);
         assert!(result.is_err());
     }
 
@@ -293,7 +293,7 @@ mod tests {
     fn test_complete_workflow() {
         // Create a tool call from JSON
         let json = r#"{"function":"get_weather","arguments":{"location":"Seattle"}}"#;
-        let mut tool_call = AlpacaToolCall::from_string(json).unwrap();
+        let mut tool_call = AlpacaToolCall::from_str(json).unwrap();
 
         // Modify it
         tool_call
