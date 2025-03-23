@@ -43,6 +43,7 @@ impl AlpacaToolParameterType {
 // ===
 // AlpacaToolProto
 // ===
+const DESCRIPTION: &str = "description";
 const FUNCTION: &str = "function";
 const PARAMETERS: &str = "parameters";
 
@@ -89,6 +90,14 @@ impl AlpacaToolProto {
     /// A formatted JSON string representation of the tool prototype.
     pub fn to_string_pretty(&self) -> String {
         serde_json::to_string_pretty(&self.object).unwrap()
+    }
+
+    pub fn description(&self) -> Option<&str> {
+        self.object[DESCRIPTION].as_str()
+    }
+
+    pub fn set_description(&mut self, function: &str) {
+        self.object[DESCRIPTION] = Value::String(function.to_string());
     }
 
     /// Gets the function name of the tool prototype.
@@ -181,15 +190,23 @@ mod tests {
     /// containing all the expected keys and values.
     #[test]
     fn test_to_string_pretty() {
+        let mut tool_description =
+            "this function returns information about files in a directory that match a search "
+                .to_string();
+        tool_description
+            .push_str("pattern such as the file name, modification date, and file size.");
+
         let mut tool = AlpacaToolProto::new();
-        tool.set_function("test_func");
-        tool.add_parameter("param1", AlpacaToolParameterType::String);
+        tool.set_function("file_info");
+        tool.set_description(&tool_description);
+        tool.add_parameter("path", AlpacaToolParameterType::String);
+        tool.add_parameter("search_pattern", AlpacaToolParameterType::String);
 
         let pretty_string = tool.to_string_pretty();
         println!("{}", pretty_string);
-        assert!(pretty_string.contains("test_func"));
-        assert!(pretty_string.contains("param1"));
-        assert!(pretty_string.contains("string"));
+        assert!(pretty_string.contains("file_info"));
+        assert!(pretty_string.contains("path"));
+        assert!(pretty_string.contains("search_pattern"));
     }
 
     /// Tests the function getter method of `AlpacaToolProto`.
