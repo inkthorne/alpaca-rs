@@ -41,6 +41,15 @@ impl AlpacaToolCall {
         }
     }
 
+    /// Converts the tool call to a formatted JSON string.
+    ///
+    /// # Returns
+    ///
+    /// A pretty-printed JSON string representation of the tool call.
+    pub fn to_string_pretty(&self) -> String {
+        serde_json::to_string_pretty(&self.object).unwrap()
+    }
+
     /// Gets the function name of this tool call.
     ///
     /// # Returns

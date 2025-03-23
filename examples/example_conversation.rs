@@ -1,6 +1,6 @@
 use ollie_rs::session::OllamaSession;
 use std::io::{self, Write};
-use tokio::time::{Duration, sleep};
+// use tokio::time::{Duration, sleep};
 
 #[tokio::main]
 async fn main() {
