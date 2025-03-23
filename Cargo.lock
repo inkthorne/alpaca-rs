@@ -22,6 +22,7 @@ name = "alpaca-rs"
 version = "0.1.0"
 dependencies = [
  "ollie-rs",
+ "serde_json",
  "tokio",
 ]
 
