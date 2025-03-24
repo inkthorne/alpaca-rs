@@ -15,7 +15,7 @@ async fn simple_chat_example() {
     let mut request = OllamaRequest::new();
     request
         .set_model("gemma3:1b") // Use the model available on your Ollama server
-        .push_message(&message);
+        .add_message(&message);
 
     println!("\nQuestion: Why is the sky blue?\n");
 

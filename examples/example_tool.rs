@@ -91,7 +91,7 @@ async fn main() {
     session.user("can you tell how many files are in my workspace? and can you tell me what example.com is about?");
 
     let mut accumulated_response = String::new();
-    session
+    let stats = session
         .update(|response| {
             accumulated_response.push_str(response);
             print!("{}", response);
@@ -104,4 +104,8 @@ async fn main() {
     for tool_call in dispatch.tool_calls() {
         println!("\n\nTool call text:\n{}", tool_call.to_string_pretty());
     }
+
+    stats.map(|r| {
+        println!("\n\nResponse:\n{}", r.as_string_pretty());
+    });
 }
