@@ -90,22 +90,26 @@ async fn main() {
     // session.user("can you tell me what example.com is about?");
     session.user("can you tell how many files are in my workspace? and can you tell me what example.com is about?");
 
-    let mut accumulated_response = String::new();
+    let mut accumulated_content = String::new();
     let stats = session
-        .update(|response| {
-            accumulated_response.push_str(response);
-            print!("{}", response);
+        .update(|content| {
+            accumulated_content.push_str(content);
+            print!("{}", content);
             io::stdout().flush().unwrap();
         })
         .await
         .unwrap();
 
-    let dispatch = AlapacaToolDispatch::new(&accumulated_response);
+    let dispatch = AlapacaToolDispatch::new(&accumulated_content);
     for tool_call in dispatch.tool_calls() {
         println!("\n\nTool call text:\n{}", tool_call.to_string_pretty());
     }
 
     stats.map(|r| {
-        println!("\n\nResponse:\n{}", r.as_string_pretty());
+        println!(
+            "\n\n ** STATS: {} tokens used of {}\n",
+            r.tokens_used(),
+            session.context_window_size()
+        );
     });
 }
