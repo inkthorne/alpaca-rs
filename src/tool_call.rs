@@ -50,6 +50,16 @@ impl AlpacaToolCall {
         serde_json::to_string_pretty(&self.object).unwrap()
     }
 
+    /// Gets the arguments object of this tool call.
+    ///
+    /// # Returns
+    ///
+    /// * `Some(&Value)` - The arguments object if it exists
+    /// * `None` - If the arguments object is not set
+    pub fn arguments(&self) -> Option<&Value> {
+        self.object.get("arguments")
+    }
+
     /// Gets the function name of this tool call.
     ///
     /// # Returns

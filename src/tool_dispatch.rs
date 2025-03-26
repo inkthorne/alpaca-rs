@@ -34,7 +34,7 @@ impl AlapacaToolDispatch {
     }
 
     fn find_tool_calls<'a>(message: &'a str) -> Vec<&'a str> {
-        const START_MARKER: &str = "```tool_call";
+        const START_MARKER: &str = "```json";
         const END_MARKER: &str = "```";
 
         let mut results = Vec::new();
