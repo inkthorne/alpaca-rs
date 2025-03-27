@@ -133,7 +133,16 @@ impl AlpacaFunctions {
         if let Some(function) = self.functions.get(function_name) {
             Some(function.execute(arguments))
         } else {
-            Some(self.list_functions())
+            let mut output_string = String::new();
+            if function_name != "list_functions" {
+                output_string.push_str(&format!(
+                    "Function '{}' not found. Available functions are:\n",
+                    function_name
+                ));
+            }
+
+            output_string.push_str(&self.list_functions());
+            Some(output_string)
         }
     }
 
