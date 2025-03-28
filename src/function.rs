@@ -29,8 +29,8 @@ pub trait AlpacaFunction {
     ///
     /// # Returns
     ///
-    /// A string containing the result of the function execution
-    fn execute(&self, arguments: Option<&serde_json::Value>) -> String;
+    /// An Option<String> containing the result of the function execution, or None if execution failed
+    fn execute(&self, arguments: Option<&serde_json::Value>) -> Option<String>;
 
     /// Return information about the function
     ///
@@ -131,7 +131,17 @@ impl AlpacaFunctions {
         arguments: Option<&serde_json::Value>,
     ) -> Option<String> {
         if let Some(function) = self.functions.get(function_name) {
-            Some(function.execute(arguments))
+            match function.execute(arguments) {
+                Some(result) => Some(result),
+                None => {
+                    let usage_error = format!(
+                        "Error: Incorrect usage of function '{}'. See usage below info below:\n{}",
+                        function.name(),
+                        function.info()
+                    );
+                    Some(usage_error)
+                }
+            }
         } else {
             let mut output_string = String::new();
             if function_name != "list_functions" {
@@ -182,8 +192,8 @@ mod tests {
     }
 
     impl AlpacaFunction for MockFunction {
-        fn execute(&self, _arguments: Option<&serde_json::Value>) -> String {
-            self.return_value.to_string()
+        fn execute(&self, _arguments: Option<&serde_json::Value>) -> Option<String> {
+            Some(self.return_value.to_string())
         }
 
         fn info(&self) -> &'static str {

@@ -16,13 +16,6 @@ example call:
 }
 ```
 "#;
-// example response:
-// ```json
-// {
-//     "function": "read_file",
-//     "output": "This is the content of the file."
-// }
-// "#;
 
 // ===
 // AlpacaFunctionReadFile
@@ -37,17 +30,12 @@ impl AlpacaFunctionReadFile {
 
 // Implement the AlpacaFunction trait for AlpacaFunctionReadFile
 impl AlpacaFunction for AlpacaFunctionReadFile {
-    fn execute(&self, arguments: Option<&serde_json::Value>) -> String {
+    fn execute(&self, arguments: Option<&serde_json::Value>) -> Option<String> {
         // Initialize a default response
         let mut response = serde_json::json!({
             "function": "read_file",
             "output": "Error: Unable to read file"
         });
-
-        let incorrect_usage = format!(
-            "Incorrect usage of function 'read_file'. See usage info below:\n{}",
-            FUNCTION_READ_FILE_INFO
-        );
 
         // Extract file_name from arguments
         if let Some(args) = arguments {
@@ -66,16 +54,16 @@ impl AlpacaFunction for AlpacaFunctionReadFile {
                 }
             } else {
                 // Return info content when file_name argument is missing
-                return incorrect_usage;
+                return None;
             }
         } else {
             // Return info content when no arguments are provided
-            return incorrect_usage;
+            return None;
         }
 
         // Format the response as pretty JSON inside a code block
         let text_output = serde_json::to_string_pretty(&response).unwrap_or_default();
-        format!("```json\n{}\n```\n", text_output)
+        Some(format!("```json\n{}\n```\n", text_output))
     }
 
     fn info(&self) -> &'static str {

@@ -44,7 +44,7 @@ impl AlpacaFunctionDir {
 
 // Implement the AlpacaFunction trait for AlpacaFunctionDir
 impl AlpacaFunction for AlpacaFunctionDir {
-    fn execute(&self, _arguments: Option<&serde_json::Value>) -> String {
+    fn execute(&self, _arguments: Option<&serde_json::Value>) -> Option<String> {
         // Read the current directory
         let current_dir = std::env::current_dir().unwrap_or_default();
         let mut files = Vec::new();
@@ -78,9 +78,7 @@ impl AlpacaFunction for AlpacaFunctionDir {
         });
 
         let text_output = serde_json::to_string_pretty(&json_output).unwrap_or_default();
-        let text_output = format!("```json\n{}\n```\n", text_output);
-
-        text_output
+        Some(format!("```json\n{}\n```\n", text_output))
     }
 
     fn info(&self) -> &'static str {
