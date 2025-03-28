@@ -6,7 +6,7 @@ const FUNCTION_DIR_INFO: &str = r#"
 This function lists the files & directories in the current directory.
 
 example call:
-```tool_call
+```json
 {
     "action": "invoke_function",
     "function": "dir",
@@ -15,17 +15,19 @@ example call:
 ```
 
 example response:
-```tool_response
+```json
 {
     "function": "dir",
-    "files": [
-        "file1.txt",
-        "file2.txt"
-    ],
-    "directories": [
-        "dir1",
-        "dir2"
-    ]
+    "output": {
+        "files": [
+            "file1.txt",
+            "file2.txt"
+        ],
+        "directories": [
+            "dir1",
+            "dir2"
+        ]
+    }
 }
 "#;
 
@@ -43,8 +45,29 @@ impl AlpacaFunctionDir {
 // Implement the AlpacaFunction trait for AlpacaFunctionDir
 impl AlpacaFunction for AlpacaFunctionDir {
     fn execute(&self, _arguments: Option<&serde_json::Value>) -> String {
-        let files = vec!["one.rs", "two.rs"];
-        let directories = vec!["source", "target"];
+        // Read the current directory
+        let current_dir = std::env::current_dir().unwrap_or_default();
+        let mut files = Vec::new();
+        let mut directories = Vec::new();
+
+        // Read directory entries
+        if let Ok(entries) = std::fs::read_dir(&current_dir) {
+            for entry in entries.flatten() {
+                if let Ok(file_type) = entry.file_type() {
+                    if let Ok(file_name) = entry.file_name().into_string() {
+                        if file_type.is_file() {
+                            files.push(file_name);
+                        } else if file_type.is_dir() {
+                            directories.push(file_name);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Sort lists for consistent output
+        files.sort();
+        directories.sort();
 
         let json_output = serde_json::json!({
             "function": "dir",
