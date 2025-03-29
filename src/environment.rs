@@ -1,5 +1,6 @@
 use serde_json::{Value, json};
 use std::path::PathBuf;
+
 // ===
 // AlpacaEnvironment
 // ===
@@ -19,64 +20,54 @@ impl AlpacaEnvironment {
         AlpacaEnvironment { current_dir }
     }
 
-    /// Returns the current working directory as a JSON Value
+    /// Process a request containing a function name and arguments
+    ///
+    /// # Arguments
+    ///
+    /// * `request` - A JSON Value with 'function' and optional 'arguments' fields
     ///
     /// # Returns
     ///
-    /// * `Value` - A JSON object containing the current directory path
-    pub fn current_dir(&self) -> Value {
-        json!({
-            "function": "env.current_dir",
-            "ok": {
-                "current_dir": self.current_dir.to_string_lossy(),
+    /// * `Value` - A JSON response from the executed function or an error if the function is not supported
+    pub fn process_invocation(&mut self, request: &Value) -> Value {
+        // Extract function name from request
+        let function_name = match request.get("function").and_then(|v| v.as_str()) {
+            Some(name) => name,
+            None => {
+                return json!({
+                    "error": "Missing required field 'function' in request."
+                });
             }
-        })
-    }
+        };
 
-    /// Sets a new current directory path
-    pub fn set_current_dir(&mut self, path: PathBuf) {
-        self.current_dir = path;
-    }
+        // Create a standalone empty JSON object to use as default
+        let empty_args = json!({});
 
-    /// Lists files and directories in the current directory
-    ///
-    /// # Returns
-    ///
-    /// * `Value` - A JSON object containing sorted lists of files and directories and the current directory path
-    pub fn list_dir(&self) -> Value {
-        let mut files = Vec::new();
-        let mut directories = Vec::new();
+        // Extract arguments from request, default to empty object if not present
+        let arguments = request.get("arguments").unwrap_or(&empty_args);
 
-        // Read directory entries
-        if let Ok(entries) = std::fs::read_dir(&self.current_dir) {
-            for entry in entries.flatten() {
-                if let Ok(file_type) = entry.file_type() {
-                    if let Ok(file_name) = entry.file_name().into_string() {
-                        if file_type.is_file() {
-                            files.push(file_name);
-                        } else if file_type.is_dir() {
-                            directories.push(file_name);
-                        }
-                    }
-                }
+        // Match function name and call appropriate method
+        match function_name {
+            "get_current_directory" => self.invoke_get_current_directory(),
+            "list_directory" => self.invoke_list_directory(),
+            "change_directory" => match self.invoke_change_directory(arguments) {
+                Ok(result) => result,
+                Err(error) => error,
+            },
+            _ => {
+                json!({
+                    "error": format!("Unsupported function: '{}'.", function_name)
+                })
             }
         }
-
-        // Sort lists for consistent output
-        files.sort();
-        directories.sort();
-
-        // Return as JSON object with current directory included
-        json!({
-            "function": "env.list_dir",
-            "ok": {
-                "current_dir": self.current_dir.to_string_lossy(),
-                "files": files,
-                "directories": directories
-            }
-        })
     }
+}
 
+// ===
+// AlpacaEnvironment: LLM Invoked Methods
+// ===
+
+impl AlpacaEnvironment {
     /// Changes the current directory to one of its subdirectories
     ///
     /// # Arguments
@@ -87,9 +78,9 @@ impl AlpacaEnvironment {
     ///
     /// * `Ok(Value)` - A JSON object with current directory information if successful
     /// * `Err(Value)` - A JSON object with error details if the directory change failed
-    pub fn change_dir(&mut self, arguments: &Value) -> Result<Value, Value> {
+    fn invoke_change_directory(&mut self, arguments: &Value) -> Result<Value, Value> {
         let mut output = json!({
-            "function": "env.change_dir",
+            "function": "change_directory",
         });
 
         // Check if subdir_name exists in arguments
@@ -137,46 +128,62 @@ impl AlpacaEnvironment {
         Ok(output)
     }
 
-    /// Process a request containing a function name and arguments
-    ///
-    /// # Arguments
-    ///
-    /// * `request` - A JSON Value with 'function' and optional 'arguments' fields
+    /// Returns the current working directory as a JSON Value
     ///
     /// # Returns
     ///
-    /// * `Value` - A JSON response from the executed function or an error if the function is not supported
-    pub fn process_request(&mut self, request: &Value) -> Value {
-        // Extract function name from request
-        let function_name = match request.get("function").and_then(|v| v.as_str()) {
-            Some(name) => name,
-            None => {
-                return json!({
-                    "error": "Missing required field 'function' in request."
-                });
+    /// * `Value` - A JSON object containing the current directory path
+    fn invoke_get_current_directory(&self) -> Value {
+        json!({
+            "function": "get_current_directory",
+            "ok": {
+                "current_dir": self.current_dir.to_string_lossy(),
             }
-        };
+        })
+    }
 
-        // Create a standalone empty JSON object to use as default
-        let empty_args = json!({});
+    /// Sets a new current directory path
+    fn set_current_dir(&mut self, path: PathBuf) {
+        self.current_dir = path;
+    }
 
-        // Extract arguments from request, default to empty object if not present
-        let arguments = request.get("arguments").unwrap_or(&empty_args);
+    /// Lists files and directories in the current directory
+    ///
+    /// # Returns
+    ///
+    /// * `Value` - A JSON object containing sorted lists of files and directories and the current directory path
+    fn invoke_list_directory(&self) -> Value {
+        let mut files = Vec::new();
+        let mut directories = Vec::new();
 
-        // Match function name and call appropriate method
-        match function_name {
-            "env.current_dir" => self.current_dir(),
-            "env.list_dir" => self.list_dir(),
-            "env.change_dir" => match self.change_dir(arguments) {
-                Ok(result) => result,
-                Err(error) => error,
-            },
-            _ => {
-                json!({
-                    "error": format!("Unsupported function: '{}'.", function_name)
-                })
+        // Read directory entries
+        if let Ok(entries) = std::fs::read_dir(&self.current_dir) {
+            for entry in entries.flatten() {
+                if let Ok(file_type) = entry.file_type() {
+                    if let Ok(file_name) = entry.file_name().into_string() {
+                        if file_type.is_file() {
+                            files.push(file_name);
+                        } else if file_type.is_dir() {
+                            directories.push(file_name);
+                        }
+                    }
+                }
             }
         }
+
+        // Sort lists for consistent output
+        files.sort();
+        directories.sort();
+
+        // Return as JSON object with current directory included
+        json!({
+            "function": "list_directory",
+            "ok": {
+                "current_dir": self.current_dir.to_string_lossy(),
+                "files": files,
+                "directories": directories
+            }
+        })
     }
 }
 
@@ -193,11 +200,11 @@ mod tests {
     fn test_new() {
         let env = AlpacaEnvironment::new();
         let current_dir = std::env::current_dir().unwrap_or_default();
-        let result = env.current_dir();
+        let result = env.invoke_get_current_directory();
         assert_eq!(
             result,
             json!({
-                "function": "env.current_dir",
+                "function": "get_current_directory",
                 "ok": {
                     "current_dir": current_dir.to_string_lossy(),
                 }
@@ -211,11 +218,11 @@ mod tests {
         let test_path = PathBuf::from("/tmp");
         env.set_current_dir(test_path.clone());
 
-        let result = env.current_dir();
+        let result = env.invoke_get_current_directory();
         assert_eq!(
             result,
             json!({
-                "function": "env.current_dir",
+                "function": "get_current_directory",
                 "ok": {
                     "current_dir": test_path.to_string_lossy(),
                 }
@@ -235,11 +242,11 @@ mod tests {
         let mut env = AlpacaEnvironment::new();
         env.set_current_dir(temp_dir.path().to_path_buf());
 
-        let result = env.list_dir();
+        let result = env.invoke_list_directory();
         assert_eq!(
             result,
             json!({
-                "function": "env.list_dir",
+                "function": "list_directory",
                 "ok": {
                     "current_dir": temp_dir.path().to_string_lossy(),
                     "files": vec!["file.txt"],
@@ -253,11 +260,11 @@ mod tests {
     fn test_current_dir() {
         let env = AlpacaEnvironment::new();
         let current_dir = std::env::current_dir().unwrap_or_default();
-        let result = env.current_dir();
+        let result = env.invoke_get_current_directory();
         assert_eq!(
             result,
             json!({
-                "function": "env.current_dir",
+                "function": "get_current_directory",
                 "ok": {
                     "current_dir": current_dir.to_string_lossy(),
                 }
@@ -279,12 +286,12 @@ mod tests {
 
         // Test changing to the subdir
         let subdir_args = json!({"subdir_name": "subdir"});
-        let result = env.change_dir(&subdir_args);
+        let result = env.invoke_change_directory(&subdir_args);
         assert!(result.is_ok());
 
         // Check JSON structure and values
         let output = result.unwrap();
-        assert_eq!(output["function"], "env.change_dir");
+        assert_eq!(output["function"], "change_directory");
         assert!(output["ok"].is_object());
         let current_dir_value = output["ok"]["current_dir"].as_str().unwrap();
 
@@ -294,7 +301,7 @@ mod tests {
         assert_eq!(current_dir_value, expected_dir);
 
         // Verify the current directory was actually changed
-        let current_dir_json = env.current_dir();
+        let current_dir_json = env.invoke_get_current_directory();
         assert_eq!(
             current_dir_json["ok"]["current_dir"].as_str().unwrap(),
             canonical_subdir.to_string_lossy()
@@ -302,19 +309,19 @@ mod tests {
 
         // Test returning to the parent directory with ".."
         let parent_args = json!({"subdir_name": ".."});
-        let result = env.change_dir(&parent_args);
+        let result = env.invoke_change_directory(&parent_args);
         assert!(result.is_ok());
 
         // Check JSON structure and values
         let output = result.unwrap();
-        assert_eq!(output["function"], "env.change_dir");
+        assert_eq!(output["function"], "change_directory");
         assert!(output["ok"].is_object());
         let current_dir_value = output["ok"]["current_dir"].as_str().unwrap();
         let expected_dir = temp_dir_canonical.to_string_lossy();
         assert_eq!(current_dir_value, expected_dir);
 
         // Verify current directory was changed back
-        let current_dir_json = env.current_dir();
+        let current_dir_json = env.invoke_get_current_directory();
         assert_eq!(
             current_dir_json["ok"]["current_dir"].as_str().unwrap(),
             temp_dir_canonical.to_string_lossy()
@@ -328,12 +335,12 @@ mod tests {
         env.set_current_dir(temp_dir.path().to_path_buf());
 
         let nonexistent_args = json!({"subdir_name": "nonexistent_dir"});
-        let result = env.change_dir(&nonexistent_args);
+        let result = env.invoke_change_directory(&nonexistent_args);
         assert!(result.is_err());
 
         // Check JSON structure and error message
         let error_output = result.unwrap_err();
-        assert_eq!(error_output["function"], "env.change_dir");
+        assert_eq!(error_output["function"], "change_directory");
         assert!(error_output["error"].is_string());
         assert!(
             error_output["error"]
@@ -343,7 +350,7 @@ mod tests {
         );
 
         // Current directory should remain unchanged
-        let current_dir_json = env.current_dir();
+        let current_dir_json = env.invoke_get_current_directory();
         assert_eq!(
             current_dir_json["ok"]["current_dir"].as_str().unwrap(),
             temp_dir.path().to_string_lossy()
@@ -361,12 +368,12 @@ mod tests {
         env.set_current_dir(temp_dir.path().to_path_buf());
 
         let file_args = json!({"subdir_name": "file.txt"});
-        let result = env.change_dir(&file_args);
+        let result = env.invoke_change_directory(&file_args);
         assert!(result.is_err());
 
         // Check JSON structure and error message
         let error_output = result.unwrap_err();
-        assert_eq!(error_output["function"], "env.change_dir");
+        assert_eq!(error_output["function"], "change_directory");
         assert!(error_output["error"].is_string());
         assert!(
             error_output["error"]
@@ -376,7 +383,7 @@ mod tests {
         );
 
         // Current directory should remain unchanged
-        let current_dir_json = env.current_dir();
+        let current_dir_json = env.invoke_get_current_directory();
         assert_eq!(
             current_dir_json["ok"]["current_dir"].as_str().unwrap(),
             temp_dir.path().to_string_lossy()
@@ -389,12 +396,12 @@ mod tests {
 
         // Test with empty JSON object - missing subdir_name
         let empty_args = json!({});
-        let result = env.change_dir(&empty_args);
+        let result = env.invoke_change_directory(&empty_args);
         assert!(result.is_err());
 
         // Check JSON structure and error message
         let error_output = result.unwrap_err();
-        assert_eq!(error_output["function"], "env.change_dir");
+        assert_eq!(error_output["function"], "change_directory");
         assert!(error_output["error"].is_string());
         assert!(
             error_output["error"]
@@ -404,12 +411,12 @@ mod tests {
         );
 
         // Current directory should remain unchanged
-        let original_dir = env.current_dir();
+        let original_dir = env.invoke_get_current_directory();
         let current_dir = std::env::current_dir().unwrap_or_default();
         assert_eq!(
             original_dir,
             json!({
-                "function": "env.current_dir",
+                "function": "get_current_directory",
                 "ok": {
                     "current_dir": current_dir.to_string_lossy(),
                 }
@@ -425,13 +432,13 @@ mod tests {
 
         // Test with empty string as subdir_name
         let empty_string_args = json!({"subdir_name": ""});
-        let result = env.change_dir(&empty_string_args);
+        let result = env.invoke_change_directory(&empty_string_args);
 
         // This should be a success since "" resolves to the current directory
         assert!(result.is_ok());
 
         // Verify current directory remains the same
-        let current_dir_json = env.current_dir();
+        let current_dir_json = env.invoke_get_current_directory();
         assert_eq!(
             current_dir_json["ok"]["current_dir"].as_str().unwrap(),
             temp_dir.path().canonicalize().unwrap().to_string_lossy()
@@ -446,7 +453,7 @@ mod tests {
 
         // Test with null value as subdir_name
         let null_args = json!({"subdir_name": null});
-        let result = env.change_dir(&null_args);
+        let result = env.invoke_change_directory(&null_args);
 
         // Empty string from null should behave like the empty string test
         let original_dir = temp_dir.path().canonicalize().unwrap();
@@ -455,7 +462,7 @@ mod tests {
         assert!(result.is_ok());
 
         // Verify current directory remains the same
-        let current_dir_json = env.current_dir();
+        let current_dir_json = env.invoke_get_current_directory();
         assert_eq!(
             current_dir_json["ok"]["current_dir"].as_str().unwrap(),
             original_dir.to_string_lossy()
@@ -468,14 +475,14 @@ mod tests {
         let current_dir = std::env::current_dir().unwrap_or_default();
 
         let request = json!({
-            "function": "env.current_dir"
+            "function": "get_current_directory"
         });
 
-        let result = env.process_request(&request);
+        let result = env.process_invocation(&request);
         assert_eq!(
             result,
             json!({
-                "function": "env.current_dir",
+                "function": "get_current_directory",
                 "ok": {
                     "current_dir": current_dir.to_string_lossy(),
                 }
@@ -496,14 +503,14 @@ mod tests {
         env.set_current_dir(temp_dir.path().to_path_buf());
 
         let request = json!({
-            "function": "env.list_dir"
+            "function": "list_directory"
         });
 
-        let result = env.process_request(&request);
+        let result = env.process_invocation(&request);
         assert_eq!(
             result,
             json!({
-                "function": "env.list_dir",
+                "function": "list_directory",
                 "ok": {
                     "current_dir": temp_dir.path().to_string_lossy(),
                     "files": vec!["file.txt"],
@@ -525,18 +532,18 @@ mod tests {
         env.set_current_dir(temp_dir_canonical.clone());
 
         let request = json!({
-            "function": "env.change_dir",
+            "function": "change_directory",
             "arguments": {
                 "subdir_name": "subdir"
             }
         });
 
-        let result = env.process_request(&request);
+        let result = env.process_invocation(&request);
 
         // Get the canonical path of the subdirectory for comparison
         let canonical_subdir = subdir_path.canonicalize().unwrap();
 
-        assert_eq!(result["function"], "env.change_dir");
+        assert_eq!(result["function"], "change_directory");
         assert!(result["ok"].is_object());
         assert_eq!(
             result["ok"]["current_dir"].as_str().unwrap(),
@@ -551,15 +558,22 @@ mod tests {
         env.set_current_dir(temp_dir.path().to_path_buf());
 
         let request = json!({
-            "function": "env.change_dir",
+            "function": "change_directory",
             "arguments": {
                 "subdir_name": "nonexistent_dir"
             }
         });
 
-        let result = env.process_request(&request);
+        let result = env.process_invocation(&request);
+        /*
+        println!(
+            "request:\n{}\n\nresponse:\n{}\n",
+            serde_json::to_string_pretty(&request).unwrap(),
+            serde_json::to_string_pretty(&result).unwrap()
+        ); // For debugging
+        */
 
-        assert_eq!(result["function"], "env.change_dir");
+        assert_eq!(result["function"], "change_directory");
         assert!(result["error"].is_string());
         assert!(result["error"].as_str().unwrap().contains("does not exist"));
     }
@@ -569,10 +583,11 @@ mod tests {
         let mut env = AlpacaEnvironment::new();
 
         let request = json!({
-            "function": "env.invalid_function"
+            "function": "invalid_function"
         });
 
-        let result = env.process_request(&request);
+        let result = env.process_invocation(&request);
+        // println!("{}", serde_json::to_string_pretty(&result).unwrap()); // For debugging
         assert!(result["error"].is_string());
         assert!(
             result["error"]
@@ -592,7 +607,14 @@ mod tests {
             }
         });
 
-        let result = env.process_request(&request);
+        let result = env.process_invocation(&request);
+        /*
+        println!(
+            "request:\n{}\n\nresponse:\n{}\n",
+            serde_json::to_string_pretty(&request).unwrap(),
+            serde_json::to_string_pretty(&result).unwrap()
+        ); // For debugging
+        */
         assert!(result["error"].is_string());
         assert!(
             result["error"]
