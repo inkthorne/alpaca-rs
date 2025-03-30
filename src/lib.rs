@@ -1,3 +1,8 @@
+pub mod action;
+pub mod action_describe;
+pub mod action_list;
+pub mod action_read_directory;
+pub mod action_read_file;
 pub mod environment;
 pub mod function;
 pub mod function_dir;
