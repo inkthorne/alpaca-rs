@@ -1,3 +1,4 @@
+use serde_json::Value;
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -6,6 +7,21 @@ You have access to 'functions' that will give you access to external data.
 This allows you to obtain more information about a topic to assist your user.
 If you feel you need more information, or are wanting to double-check that
 your answer is accurate, using these 'functions' is a good idea.
+
+To see a list of the 'functions' available to you, use the following function call:
+```json
+{
+    "action": "invoke_function",
+    "function": "list_functions"
+} 
+```
+"#;
+
+const FUNCTIONS_INTRO1: &str = r#"
+When you need access to additional information that is outside your own knowledge,
+I can run functions for you. These 'functions' can help you gather information or
+perform tasks that you might not be able to do on your own. Remember to regularly
+check the list of available functions to see what you can do.
 
 To see a list of the 'functions' available to you, use the following function call:
 ```json
@@ -103,7 +119,7 @@ impl AlpacaFunctions {
         let function_list = serde_json::Value::Array(descriptions);
         let json_output = json!({
             "function": "list_functions",
-            "output": function_list
+            "ok": function_list
         });
 
         let text_output = format!(
@@ -162,7 +178,37 @@ impl AlpacaFunctions {
     ///
     /// A static string with instructions for using functions
     pub fn intro(&self) -> &'static str {
-        FUNCTIONS_INTRO
+        FUNCTIONS_INTRO1
+    }
+
+    /// Creates a formatted error message for function execution failures
+    ///
+    /// # Arguments
+    ///
+    /// * `function` - The name of the function that encountered an error
+    /// * `error` - A description of the error that occurred
+    ///
+    /// # Returns
+    ///
+    /// A formatted string containing a markdown code block with JSON error details
+    pub fn error(function: &str, error: &str) -> String {
+        let response_value = serde_json::json!({
+            "function": function,
+            "error": error,
+        });
+
+        let response_text = serde_json::to_string_pretty(&response_value).unwrap();
+        format!("```json\n{}\n```\n", response_text)
+    }
+
+    pub fn ok(function: &str, output: &Value) -> String {
+        let response_value = serde_json::json!({
+            "function": function,
+            "ok": output,
+        });
+
+        let response_text = serde_json::to_string_pretty(&response_value).unwrap();
+        format!("```json\n{}\n```\n", response_text)
     }
 }
 
@@ -247,7 +293,7 @@ mod tests {
         assert_eq!(parsed["function"], "list_functions");
 
         // Check the output array
-        let output = &parsed["output"];
+        let output = &parsed["ok"];
         assert!(output.is_array());
         let array = output.as_array().unwrap();
         assert_eq!(array.len(), 2);

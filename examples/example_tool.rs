@@ -22,9 +22,14 @@ can you tell me what the rust project in the current directory is about?
 "#;
 
 pub const PROMPT_4: &str = r#"
+instructions:
+1. break down the task or tasks into individual steps.
+2. only complete one step per turn.
+3. remember to use the functions!
+
+task:
 does the current directory contain a rust project? and if so, 
 what crates does the rust project use?
-(hint: use your functions!)
 "#;
 
 #[tokio::main]
@@ -41,7 +46,7 @@ async fn main() {
     let mut session = OllamaSession::new(model);
     // session.system(&system_message);
     session.user(functions.intro());
-    // println!("{}", functions.intro());
+    println!("{}", functions.intro());
     // session.user("can you tell how many files are in my workspace?");
     let prompt = PROMPT_4;
     session.user(prompt);

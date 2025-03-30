@@ -1,4 +1,4 @@
-use crate::function::AlpacaFunction;
+use crate::function::{AlpacaFunction, AlpacaFunctions};
 
 const FUNCTION_DIR_INFO: &str = r#"
 # `dir`
@@ -69,16 +69,12 @@ impl AlpacaFunction for AlpacaFunctionDir {
         files.sort();
         directories.sort();
 
-        let json_output = serde_json::json!({
-            "function": "dir",
-            "output": {
-                "files": files,
-                "directories": directories
-            }
+        let ok = serde_json::json!({
+            "files": files,
+            "directories": directories,
         });
 
-        let text_output = serde_json::to_string_pretty(&json_output).unwrap_or_default();
-        Some(format!("```json\n{}\n```\n", text_output))
+        Some(AlpacaFunctions::ok(self.name(), &ok))
     }
 
     fn info(&self) -> &'static str {
