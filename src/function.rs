@@ -2,7 +2,7 @@ use serde_json::Value;
 use serde_json::json;
 use std::collections::HashMap;
 
-const FUNCTIONS_INTRO: &str = r#"
+pub const FUNCTIONS_INTRO: &str = r#"
 You have access to 'functions' that will give you access to external data.
 This allows you to obtain more information about a topic to assist your user.
 If you feel you need more information, or are wanting to double-check that

@@ -43,7 +43,7 @@ async fn main() {
     // let model = "gemma3:12b";
     // let model = "deepseek-r1:7b";
     // let model = "deepseek-r1:14b";
-    let mut session = OllamaSession::new(model);
+    let mut session = OllamaSession::new(model, None);
     // session.system(&system_message);
     session.user(functions.intro());
     println!("{}", functions.intro());

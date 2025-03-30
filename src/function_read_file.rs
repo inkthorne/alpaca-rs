@@ -54,6 +54,15 @@ impl AlpacaFunction for AlpacaFunctionReadFile {
                     }
                 }
             }
+
+            // if the 'file_name' field is not provided, return an error
+            let error = AlpacaFunctions::error(
+                self.name(),
+                "The 'file_name' field is missing from the request. Please review the usage and try again.",
+            );
+            let usage = self.info();
+            let response = format!("{}{}\n", error, usage);
+            return Some(response);
         }
 
         // If 'arguments' is not provided, return an error
@@ -63,7 +72,6 @@ impl AlpacaFunction for AlpacaFunctionReadFile {
         );
 
         let usage = self.info();
-
         let response = format!("{}{}\n", error, usage);
         Some(response)
     }

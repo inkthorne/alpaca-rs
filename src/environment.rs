@@ -143,7 +143,7 @@ impl AlpacaEnvironment {
     }
 
     /// Sets a new current directory path
-    fn set_current_dir(&mut self, path: PathBuf) {
+    pub fn set_current_dir(&mut self, path: PathBuf) {
         self.current_dir = path;
     }
 
