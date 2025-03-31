@@ -16,6 +16,13 @@ in the current working directory. Here is an example of how to invoke it:
 ```
 "#;
 
+const ERR_TOO_MANY_ARGS: &str = r#"
+```json
+{
+    "error": "The action 'read_directory' contained too many arguments."
+}
+"#;
+
 pub struct AlpacaActionReadDirectory {}
 
 impl AlpacaActionReadDirectory {
@@ -33,7 +40,14 @@ impl AlpacaActionTrait for AlpacaActionReadDirectory {
         DESCRIPTION
     }
 
-    fn invoke(&self, _object: &JsonValue, _context: &AlpacaActions) -> String {
+    fn invoke(&self, object: &JsonValue, _context: &AlpacaActions) -> String {
+        // Return an error if the action contains too many arguments
+        if let Some(object) = object.as_object() {
+            if object.len() > 1 {
+                return format!("{}{}", ERR_TOO_MANY_ARGS, DESCRIPTION);
+            }
+        }
+
         // Read the current directory
         let current_dir = std::env::current_dir().unwrap_or_default();
         let mut files = Vec::new();

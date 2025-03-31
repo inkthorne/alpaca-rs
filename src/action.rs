@@ -111,7 +111,8 @@ impl AlpacaActions {
                     } else {
                         // If the action does not exist, return an error message
                         format!(
-                            "There was a problem attempting to perform the action '{}':\n\n{}",
+                            // "There was a problem attempting to perform the action '{}':\n\n{}",
+                            "Here is the response from trying to perform action '{}':\n\n{}",
                             name,
                             Self::response_action_not_found(name, name)
                         )
