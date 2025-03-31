@@ -4,12 +4,10 @@ use serde_json::Value as JsonValue;
 use serde_json::json;
 
 const DESCRIPTION: &str = r#"
-# `describe_action`
-
 The 'describe_action' action provides a detailed description of the specified action,
-including its parameters and usage examples. Here is an example of
-how to invoke it:
+including its parameters and usage examples.
 
+Here is an example of how to invoke it:
 ```json
 {
     "action": "describe_action",
@@ -36,23 +34,28 @@ impl AlpacaActionTrait for AlpacaActionDescribe {
     }
 
     fn invoke(&self, object: &JsonValue, context: &AlpacaActions) -> String {
-        let response = object["action_name"]
+        let description = object["action_name"]
             .as_str()
             .map(|name| context.describe_action(name));
 
-        if response.is_some() {
-            return response.unwrap();
+        if let Some(description) = description {
+            let response = format!("## Success\n{}\n", &description);
+            return response;
         }
 
         let error_text = format!(
-            "{}\n{}\n",
+            "## Error\n\n{}\n{}\n",
             "Request is missing the 'action_name' field.", DESCRIPTION
         );
 
+        error_text
+
+        /*
         let error = json!({
             "error": error_text
         });
 
         AlpacaActions::blockify(&error)
+        */
     }
 }

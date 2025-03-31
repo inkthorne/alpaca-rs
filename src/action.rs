@@ -7,45 +7,17 @@ use serde_json::Value as JsonValue;
 use serde_json::json;
 use std::collections::HashMap;
 
-// ===
-// AlpacaAction
-// ===
+// ---
 
-pub struct AlpacaAction {
-    pub name: String,
-    pub description: String,
-}
+fn string_action_response(action: &str, response: &str) -> String {
+    format!(
+        r#"
+# `{}` Action Response
 
-impl AlpacaAction {
-    pub fn new(name: &str, description: &str) -> Self {
-        Self {
-            name: name.to_string(),
-            description: description.to_string(),
-        }
-    }
-
-    pub fn to_string(&self) -> String {
-        let string = json!({
-            "name": self.name,
-            "description": self.description,
-        });
-
-        serde_json::to_string_pretty(&string).unwrap()
-    }
-
-    pub fn invoke(&self, _json_block: &JsonValue, actions: &AlpacaActions) -> String {
-        // Check if the action is "list_actions"
-        if self.name == "list_actions" {
-            return actions.list_actions();
-        }
-
-        let string = json!({
-            "action": self.name,
-            "ok": true,
-        });
-
-        serde_json::to_string_pretty(&string).unwrap()
-    }
+{}
+"#,
+        action, response
+    )
 }
 
 // ===
@@ -67,7 +39,7 @@ pub struct AlpacaActions {
 }
 
 // ===
-// AlpacaAction: Public Methods
+// AlpacaActions: Public Methods
 // ===
 
 impl AlpacaActions {
@@ -86,7 +58,7 @@ impl AlpacaActions {
 
     pub fn blockify(object: &JsonValue) -> String {
         let string = serde_json::to_string_pretty(object).unwrap();
-        format!("```json\n{}\n```", string)
+        format!("```json\n{}\n```\n", string)
     }
 
     pub fn add_action(&mut self, action: Box<dyn AlpacaActionTrait>) {
@@ -103,11 +75,14 @@ impl AlpacaActions {
                     // Check if the action exists in the actions map
                     if let Some(action) = self.actions.get(name) {
                         // If the action exists, execute it and get the response
+                        string_action_response(name, &action.invoke(block, self))
+                        /*
                         format!(
                             "Here is the response from action '{}':\n\n{}",
                             name,
                             action.invoke(block, self)
                         )
+                        */
                     } else {
                         // If the action does not exist, return an error message
                         format!(
@@ -132,30 +107,28 @@ impl AlpacaActions {
 
     pub fn describe_action(&self, action_name: &str) -> String {
         if let Some(action) = self.actions.get(action_name) {
+            return action.description().to_string();
+            /*
             let object = json!({
                 "description": action.description(),
             });
 
             return Self::blockify(&object);
+            */
         }
 
         Self::response_action_not_found("describe_action", action_name)
     }
 
-    pub fn list_actions(&self) -> String {
+    pub fn action_names(&self) -> Vec<String> {
         let mut action_names: Vec<String> = self.actions.keys().cloned().collect();
         action_names.sort();
-
-        let object = json!({
-            "available_actions": action_names,
-        });
-
-        Self::blockify(&object)
+        action_names
     }
 }
 
 // ===
-// AlpacaAction: Private Methods
+// AlpacaActions: Private Methods
 // ===
 
 impl AlpacaActions {

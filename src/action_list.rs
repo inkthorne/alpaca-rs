@@ -1,13 +1,12 @@
 use crate::action::AlpacaActionTrait;
 use crate::action::AlpacaActions;
 use serde_json::Value as JsonValue;
+use serde_json::json;
 
 const DESCRIPTION: &str = r#"
-# `list_actions`
-
 The 'list_actions' action reponds with a list of all of the available actions.
-Here is an example of how to invoke it:
 
+Here is an example of how to invoke it:
 ```json
 {
     "action": "list_actions"
@@ -33,6 +32,16 @@ impl AlpacaActionTrait for AlpacaActionList {
     }
 
     fn invoke(&self, _object: &JsonValue, context: &AlpacaActions) -> String {
-        context.list_actions()
+        let action_names = context.action_names();
+        let object = json!({
+            "available_actions": action_names,
+        });
+
+        let actions_block = AlpacaActions::blockify(&object);
+        let response = format!(
+            "## Success\n\nHere is the list of available actions:\n{}\n",
+            &actions_block
+        );
+        response
     }
 }

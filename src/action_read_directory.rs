@@ -4,10 +4,21 @@ use serde_json::Value as JsonValue;
 
 const NAME: &str = "read_directory";
 const DESCRIPTION: &str = r#"
-# `read_directory`
-
 The 'read_directory' action provides the names of the files and subdirectories
-in the current working directory. Here is an example of how to invoke it:
+in the current working directory.
+
+Here is an example of how to invoke it:
+```json
+{
+    "action": "read_directory",
+}
+```
+"#;
+
+// ---
+
+const EXAMPLE_USAGE: &str = r#"
+Here is an example of how to invoke it:
 
 ```json
 {
@@ -16,12 +27,15 @@ in the current working directory. Here is an example of how to invoke it:
 ```
 "#;
 
-const ERR_TOO_MANY_ARGS: &str = r#"
-```json
-{
-    "error": "The action 'read_directory' contained too many arguments."
+// ---
+
+fn format_response(status: &str, response: &str) -> String {
+    format!("## {}\n\n{}\n", status, response)
 }
-"#;
+
+// ===
+// AlpacaActionReadDirectory
+// ===
 
 pub struct AlpacaActionReadDirectory {}
 
@@ -44,7 +58,10 @@ impl AlpacaActionTrait for AlpacaActionReadDirectory {
         // Return an error if the action contains too many arguments
         if let Some(object) = object.as_object() {
             if object.len() > 1 {
-                return format!("{}{}", ERR_TOO_MANY_ARGS, DESCRIPTION);
+                // return format!("{}{}", ERR_TOO_MANY_ARGS, DESCRIPTION);
+                let response =
+                    format_response("Error", "The action was invoked with incorrect arguments.");
+                return format!("{}{}", response, EXAMPLE_USAGE);
             }
         }
 
@@ -77,6 +94,12 @@ impl AlpacaActionTrait for AlpacaActionReadDirectory {
             "directories": directories,
         });
 
-        AlpacaActions::blockify(&ok)
+        let directory_block = AlpacaActions::blockify(&ok);
+        let response = format!(
+            "Here are the files and directories in the current directory:\n{}",
+            &directory_block
+        );
+
+        format_response("Success", &response)
     }
 }

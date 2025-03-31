@@ -41,16 +41,31 @@ actions to perform and you am finished with the task.
 "#;
 
 pub const QUERY_1: &str = r#"
+# Your Task
+
 Find the number of files can with the 'lock' extension in
-the current directory and list the names of those files.
+the current directory and list the names of those files. When
+you have the final answer, put it in JSON format like this:
+```json
+{
+    "number_of_files": 3,
+    "files": [
+        "file1.lock",
+        "file2.lock",
+        "file3.lock"
+    ]
+}
 "#;
 
 #[tokio::main]
 async fn main() {
     let actions = AlpacaActions::new();
-    let model = "gemma3:4b";
+    // let model = "gemma3:4b";
+    let model = "gemma3:12b";
     // let model = "deepseek-r1:8b";
-    let mut session = OllamaSession::local(model);
+    // let model = "deepseek-r1:14b";
+    // let mut session = OllamaSession::local(model);
+    let mut session = OllamaSession::new(model);
 
     let prompt = SYS_PROMPT_3;
     println!("{}", prompt);
@@ -73,7 +88,7 @@ async fn main() {
 
         let mut action_count = 0;
         actions.invoke(&accumulated_content).map(|response| {
-            println!("\n=== [[** USER **]] ---------------------------------\n");
+            println!("\n\n=== [[** USER **]] ---------------------------------");
             println!("{}", response);
             session.user(&response);
             action_count += 1;
