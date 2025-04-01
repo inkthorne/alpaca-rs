@@ -1,7 +1,6 @@
 use crate::action::AlpacaActionTrait;
 use crate::action::AlpacaActions;
 use serde_json::Value as JsonValue;
-use serde_json::json;
 
 const DESCRIPTION: &str = r#"
 The 'describe_action' action provides a detailed description of the specified action,
@@ -49,13 +48,5 @@ impl AlpacaActionTrait for AlpacaActionDescribe {
         );
 
         error_text
-
-        /*
-        let error = json!({
-            "error": error_text
-        });
-
-        AlpacaActions::blockify(&error)
-        */
     }
 }

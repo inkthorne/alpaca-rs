@@ -4,7 +4,7 @@ use serde_json::Value as JsonValue;
 use serde_json::json;
 
 const DESCRIPTION: &str = r#"
-The 'list_actions' action reponds with a list of all of the available actions.
+The 'list_actions' action responds with a list of all of the available actions.
 
 Here is an example of how to invoke it:
 ```json

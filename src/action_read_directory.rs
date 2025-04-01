@@ -19,7 +19,6 @@ Here is an example of how to invoke it:
 
 const EXAMPLE_USAGE: &str = r#"
 Here is an example of how to invoke it:
-
 ```json
 {
     "action": "read_directory",
@@ -59,8 +58,10 @@ impl AlpacaActionTrait for AlpacaActionReadDirectory {
         if let Some(object) = object.as_object() {
             if object.len() > 1 {
                 // return format!("{}{}", ERR_TOO_MANY_ARGS, DESCRIPTION);
-                let response =
-                    format_response("Error", "The action was invoked with incorrect arguments.");
+                let response = format_response(
+                    "Error",
+                    "The action `read_directory` does not take any additional arguments.",
+                );
                 return format!("{}{}", response, EXAMPLE_USAGE);
             }
         }
@@ -91,12 +92,12 @@ impl AlpacaActionTrait for AlpacaActionReadDirectory {
 
         let ok = serde_json::json!({
             "files": files,
-            "directories": directories,
+            "subdirectories": directories,
         });
 
         let directory_block = AlpacaActions::blockify(&ok);
         let response = format!(
-            "Here are the files and directories in the current directory:\n{}",
+            "Here are the contents of the current directory:\n{}",
             &directory_block
         );
 

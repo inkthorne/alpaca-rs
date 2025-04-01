@@ -2,6 +2,17 @@ use alpaca_rs::action::AlpacaActions;
 use ollie_rs::session::OllamaSession;
 use std::io::{self, Write};
 
+pub const SYS_PROMPT_2: &str = r#"
+You are a helpful and friendly assistant. You excel at following instructions,
+answering questions, and working step-by-step through problems.
+
+You are proficient at using 'actions' like reading a file, listing the contents
+of a directory, or fetching a web-page. These actions help you collect information
+that is external to you, allowing you to answer questions
+and complete tasks, where your own internal knowledge is not sufficient.
+
+"#;
+
 pub const SYS_PROMPT_3: &str = r#"
 You are a helpful and friendly assistant. You excel at following instructions,
 answering questions, and working step-by-step through problems.
@@ -43,39 +54,87 @@ actions to perform and you am finished with the task.
 pub const QUERY_1: &str = r#"
 # Your Task
 
-Find the number of files can with the 'lock' extension in
-the current directory and list the names of those files. When
-you have the final answer, put it in JSON format like this:
+Find the files that end with ".lock" in the current directory and list the names of
+those files. When you have the final answer, put it in JSON format like this:
 ```json
 {
-    "number_of_files": 3,
-    "files": [
-        "file1.lock",
-        "file2.lock",
-        "file3.lock"
+    "match_count": 3,
+    "names": [
+        "name1",
+        "name2",
+        "name3"
     ]
 }
+```
+
+You will need to use actions to solve this task. Use the following to invoke the
+`list_actions` action to get a list of all the actions that are available to you:
+```json
+{
+    "action": "list_actions"
+}
+```
+"#;
+
+// ---
+
+pub const QUERY_2: &str = r#"
+# Your Task
+
+Find the hidden subdirectories (subdirectories that start with '.') in the current
+directory and list the names of those subdirectories. When you have the final answer,
+output it in JSON format like this:
+```json
+{
+    "match_count": 3,
+    "names": [
+        "name1",
+        "name2",
+        "name3"
+    ]
+}
+```
+
+Afterward, enumerate the steps you would use to reverse-check the answer. Use the following format:
+```json
+{
+    "steps": [
+        "step 1",
+        "step 2",
+        "step 3"
+    ]
+}
+```
+
+You will need to use 'actions' to solve this task. Use the following to invoke the
+`list_actions` action to get a list of all the actions that are available to you:
+```json
+{
+    "action": "list_actions"
+}
+```
 "#;
 
 #[tokio::main]
 async fn main() {
     let actions = AlpacaActions::new();
-    // let model = "gemma3:4b";
-    let model = "gemma3:12b";
+    let model = "gemma3:4b";
+    // let model = "gemma3:12b";
     // let model = "deepseek-r1:8b";
     // let model = "deepseek-r1:14b";
-    // let mut session = OllamaSession::local(model);
-    let mut session = OllamaSession::new(model);
+    let mut session = OllamaSession::local(model);
+    // let mut session = OllamaSession::new(model);
+    session.options().set_temperature(1.0);
 
-    let prompt = SYS_PROMPT_3;
+    let prompt = SYS_PROMPT_2;
     println!("{}", prompt);
     session.system(prompt);
-    let query = QUERY_1;
+    let query = QUERY_2;
     println!("{}", query);
     session.user(query);
 
     for _ in 0..11 {
-        println!("\n=== [[** ASSISTANT **]] ----------------------------\n");
+        println!("=== [[** ASSISTANT **]] ----------------------------\n");
         let mut accumulated_content = String::new();
         session
             .update(|content| {

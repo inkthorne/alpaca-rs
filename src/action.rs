@@ -9,6 +9,18 @@ use std::collections::HashMap;
 
 // ---
 
+const ACTION_NOT_FOUND: &str = r#"
+Use the `list_actions` action to get a list of all of the available actions.
+Here is an example of how to invoke it:
+```json
+{
+    "action": "list_actions"
+}
+```
+"#;
+
+// ---
+
 fn string_action_response(action: &str, response: &str) -> String {
     format!(
         r#"
@@ -76,21 +88,21 @@ impl AlpacaActions {
                     if let Some(action) = self.actions.get(name) {
                         // If the action exists, execute it and get the response
                         string_action_response(name, &action.invoke(block, self))
-                        /*
-                        format!(
-                            "Here is the response from action '{}':\n\n{}",
-                            name,
-                            action.invoke(block, self)
-                        )
-                        */
                     } else {
                         // If the action does not exist, return an error message
-                        format!(
-                            // "There was a problem attempting to perform the action '{}':\n\n{}",
-                            "Here is the response from trying to perform action '{}':\n\n{}",
-                            name,
-                            Self::response_action_not_found(name, name)
-                        )
+                        let response = format!(
+                            "## Error\n\nAction '{}' not found.\n{}",
+                            name, ACTION_NOT_FOUND
+                        );
+                        string_action_response(name, &response)
+                        /*
+                         format!(
+                             // "There was a problem attempting to perform the action '{}':\n\n{}",
+                             "Here is the response from trying to perform action '{}':\n\n{}",
+                             name,
+                             Self::response_action_not_found(name, name)
+                         )
+                        */
                     }
                 })
             })
