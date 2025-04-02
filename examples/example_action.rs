@@ -95,17 +95,6 @@ output it in JSON format like this:
 }
 ```
 
-Afterward, enumerate the steps you would use to reverse-check the answer. Use the following format:
-```json
-{
-    "steps": [
-        "step 1",
-        "step 2",
-        "step 3"
-    ]
-}
-```
-
 You will need to use 'actions' to solve this task. Use the following to invoke the
 `list_actions` action to get a list of all the actions that are available to you:
 ```json
@@ -114,6 +103,11 @@ You will need to use 'actions' to solve this task. Use the following to invoke t
 }
 ```
 "#;
+
+fn streaming_print(content: &str) {
+    print!("{}", content);
+    io::stdout().flush().unwrap();
+}
 
 #[tokio::main]
 async fn main() {
@@ -124,29 +118,30 @@ async fn main() {
     // let model = "deepseek-r1:14b";
     let mut session = OllamaSession::local(model);
     // let mut session = OllamaSession::new(model);
-    session.options().set_temperature(1.0);
+    session.options().set_temperature(0.0);
+    // session.options().set_seed(7);
 
     let prompt = SYS_PROMPT_2;
     println!("{}", prompt);
     session.system(prompt);
-    let query = QUERY_2;
+    let query = QUERY_1;
     println!("{}", query);
     session.user(query);
 
     for _ in 0..11 {
         println!("=== [[** ASSISTANT **]] ----------------------------\n");
-        let mut accumulated_content = String::new();
-        session
+        let response = session
             .update(|content| {
-                accumulated_content.push_str(content);
-                print!("{}", content);
-                io::stdout().flush().unwrap();
+                streaming_print(content);
             })
             .await
             .unwrap();
 
+        let response = response.unwrap();
+        let content = response.content().unwrap();
+
         let mut action_count = 0;
-        actions.invoke(&accumulated_content).map(|response| {
+        actions.invoke(content).map(|response| {
             println!("\n\n=== [[** USER **]] ---------------------------------");
             println!("{}", response);
             session.user(&response);

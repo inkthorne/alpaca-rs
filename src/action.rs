@@ -2,6 +2,7 @@ use crate::action_describe::AlpacaActionDescribe;
 use crate::action_list::AlpacaActionList;
 use crate::action_read_directory::AlpacaActionReadDirectory;
 use crate::action_read_file::AlpacaActionReadFile;
+use crate::action_regex::AlpacaActionRegex;
 use regex::Regex;
 use serde_json::Value as JsonValue;
 use serde_json::json;
@@ -64,6 +65,7 @@ impl AlpacaActions {
         actions.add_action(Box::new(AlpacaActionDescribe::new()));
         actions.add_action(Box::new(AlpacaActionReadDirectory::new()));
         actions.add_action(Box::new(AlpacaActionReadFile::new()));
+        actions.add_action(Box::new(AlpacaActionRegex::new()));
 
         actions
     }
