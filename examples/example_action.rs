@@ -22,8 +22,10 @@ that are available to you:
 }
 ```
 
-Don't assume the results of the action, end your turn and wait for the user to respond.
-The results of the 'action' will be returned by the user on the following turn.
+- Don't assume the results of the action, end your turn and wait for the user to respond.
+- Do not invoke more than one action per turn.
+- The results of the 'action' will be returned by the user on the following turn.
+- Don't forget to escape your backslashes in JSON strings. For example, use `\\` instead of `\`.
 "#;
 
 pub const SYS_PROMPT_3: &str = r#"
@@ -113,13 +115,9 @@ output it in JSON format like this:
 }
 ```
 
-You will need to use 'actions' to solve this task. Use the following to invoke the
-`list_actions` action to get a list of all the actions that are available to you:
-```json
-{
-    "action": "list_actions"
-}
-```
+## Hints
+
+Use the `regex` action to ensure your filtering is correct.
 "#;
 
 pub const QUERY_3: &str = r#"
@@ -167,9 +165,11 @@ async fn main() {
     // let model = "llama3.1:8b";
     // let model = "qwen2.5:7b";
     // let model = "qwen2.5-coder:7b";
-    let model = "qwen2.5-coder:14b";
-    // let model = "gemma3:4b";
+    // let model = "qwen2.5-coder:14b";
+    // let model = "gemma2:9b";
+    let model = "gemma3:4b";
     // let model = "gemma3:12b";
+    // let model = "deepseek-r1:7b";
     // let model = "deepseek-r1:8b";
     // let model = "deepseek-r1:14b";
     // let model = "deepseek-coder-v2:16b";
@@ -181,7 +181,7 @@ async fn main() {
     let prompt = SYS_PROMPT_2;
     println!("{}", prompt);
     session.system(prompt);
-    let query = QUERY_2;
+    let query = QUERY_3;
     println!("{}", query);
     session.user(query);
 

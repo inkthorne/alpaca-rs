@@ -6,11 +6,11 @@ use crate::action_regex::AlpacaActionRegex;
 use regex::Regex;
 use serde_json::Value as JsonValue;
 use serde_json::json;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 // ---
 
-const ACTION_NOT_FOUND: &str = r#"
+pub const ACTION_NOT_FOUND: &str = r#"
 Use the `list_actions` action to get a list of all of the available actions.
 Here is an example of how to invoke it:
 ```json
@@ -93,8 +93,9 @@ impl AlpacaActions {
                     } else {
                         // If the action does not exist, return an error message
                         let response = format!(
-                            "## Error\n\nAction '{}' not found.\n{}",
-                            name, ACTION_NOT_FOUND
+                            "## Error\n\nAction '{}' not found.\n\n{}",
+                            name,
+                            self.action_list()
                         );
                         string_action_response(name, &response)
                         /*
@@ -132,6 +133,19 @@ impl AlpacaActions {
         }
 
         Self::response_action_not_found("describe_action", action_name)
+    }
+
+    pub fn action_list(&self) -> String {
+        let action_names = self.action_names();
+        let json_value = json!({
+            "actions": action_names
+        });
+
+        format!(
+            "## Available Actions\n\n{}\n{}",
+            "Here is the list of available actions:",
+            Self::blockify(&json_value)
+        )
     }
 
     pub fn action_names(&self) -> Vec<String> {
@@ -173,7 +187,32 @@ impl AlpacaActions {
             }
         }
 
-        results
+        // Remove any duplicates from the results
+        self.remove_duplicates(results)
+    }
+
+    /// Removes duplicate JsonValue objects from a vector.
+    /// Two JsonValue objects are considered duplicates if they have the same key-value pairs.
+    ///
+    /// # Arguments
+    ///
+    /// * `values` - A vector of JsonValue objects that may contain duplicates
+    ///
+    /// # Returns
+    ///
+    /// A new vector of JsonValue objects with duplicates removed
+    fn remove_duplicates(&self, values: Vec<JsonValue>) -> Vec<JsonValue> {
+        let mut seen = HashSet::new();
+        let mut result = Vec::new();
+
+        for value in values {
+            let value_str = serde_json::to_string(&value).unwrap_or_default();
+            if seen.insert(value_str) {
+                result.push(value);
+            }
+        }
+
+        result
     }
 
     fn response_action_not_found(_from: &str, action: &str) -> String {
