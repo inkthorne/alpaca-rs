@@ -8,9 +8,22 @@ answering questions, and working step-by-step through problems.
 
 You are proficient at using 'actions' like reading a file, listing the contents
 of a directory, or fetching a web-page. These actions help you collect information
-that is external to you, allowing you to answer questions
-and complete tasks, where your own internal knowledge is not sufficient.
+that is external to you, allowing you to answer questions and complete tasks more
+quickly and more accurately than if you were to only use your internal knowledge alone.
 
+## How to Use Actions
+
+You will need to use 'actions' to successfully complete tasks. Use the following
+JSON block to invoke the `list_actions` action to get a list of all the actions
+that are available to you:
+```json
+{
+    "action": "list_actions"
+}
+```
+
+Don't assume the results of the action, end your turn and wait for the user to respond.
+The results of the 'action' will be returned by the user on the following turn.
 "#;
 
 pub const SYS_PROMPT_3: &str = r#"
@@ -51,21 +64,23 @@ with '** DONE **' at the end of your response. This indicates that you have no f
 actions to perform and you am finished with the task.
 "#;
 
+// ---
+
 pub const QUERY_1: &str = r#"
 # Your Task
 
+## Objective
 Find the files that end with ".lock" in the current directory and list the names of
-those files. When you have the final answer, put it in JSON format like this:
-```json
-{
-    "match_count": 3,
-    "names": [
-        "name1",
-        "name2",
-        "name3"
-    ]
-}
-```
+those files.
+
+## Instructions
+
+Make a plan of enumerated steps you are going to take to solve the task. Then, perform
+one step per-turn. After each step, output the result of the step and determine if the
+step was a success or failure. If the step failed, make adjustments and retry the step.
+Do not proceed to the next step until the current step is successful.
+
+## Hints
 
 You will need to use actions to solve this task. Use the following to invoke the
 `list_actions` action to get a list of all the actions that are available to you:
@@ -74,6 +89,9 @@ You will need to use actions to solve this task. Use the following to invoke the
     "action": "list_actions"
 }
 ```
+
+Remember to escape your backslashes in JSON strings. For example, use `\\` instead of `\`.
+This is especially important when using regex patterns in JSON strings.
 "#;
 
 // ---
@@ -104,6 +122,38 @@ You will need to use 'actions' to solve this task. Use the following to invoke t
 ```
 "#;
 
+pub const QUERY_3: &str = r#"
+# Your Task
+
+Find the filenames that end with ".lock" in the current directory and output the names
+in a JSON array.
+
+## Instructions
+
+1. First, use the `list_actions` action to get a list of all the actions that are
+available to you. Review the list and use it in step 2.
+
+2. With the list of actions, make a plan of enumerated steps you are going to
+take to solve the task.
+
+3. Execute each step one at a time making sure to state which step you are
+currently on. Only execute one step per turn. After each step, output the result of the
+step and determine if the step was a success or failure. If the step failed,
+make adjustments are retry the step.  Do not proceed to the next step until
+the current step is successful.
+
+4. When you have the final answer, output it in JSON format and end the turn
+with the string '** DONE **'.
+
+## Hints
+
+Remember to escape your backslashes in JSON strings. For example, use `\\` instead of `\`.
+This is especially important when using regex patterns in JSON strings.
+
+When performing string matches or filtering, make sure you use an appropriate 'action' to 
+double-check your results: for example, `regex` or `string_match`.
+"#;
+
 fn streaming_print(content: &str) {
     print!("{}", content);
     io::stdout().flush().unwrap();
@@ -112,19 +162,26 @@ fn streaming_print(content: &str) {
 #[tokio::main]
 async fn main() {
     let actions = AlpacaActions::new();
-    let model = "gemma3:4b";
+    // let model = "dolphin3:8b";
+    // let model = "phi4";
+    // let model = "llama3.1:8b";
+    // let model = "qwen2.5:7b";
+    // let model = "qwen2.5-coder:7b";
+    let model = "qwen2.5-coder:14b";
+    // let model = "gemma3:4b";
     // let model = "gemma3:12b";
     // let model = "deepseek-r1:8b";
     // let model = "deepseek-r1:14b";
+    // let model = "deepseek-coder-v2:16b";
     let mut session = OllamaSession::local(model);
     // let mut session = OllamaSession::new(model);
     session.options().set_temperature(0.0);
-    // session.options().set_seed(7);
+    // session.options().set_seed(9834);
 
     let prompt = SYS_PROMPT_2;
     println!("{}", prompt);
     session.system(prompt);
-    let query = QUERY_1;
+    let query = QUERY_2;
     println!("{}", query);
     session.user(query);
 

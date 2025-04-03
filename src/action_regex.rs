@@ -6,8 +6,6 @@ use serde_json::json;
 
 const NAME: &str = "regex";
 const DESCRIPTION: &str = r#"
-# `regex`
-
 The 'regex' action allows you to perform regular expression operations on text.
 You can search for patterns in text and extract matches.
 
@@ -39,6 +37,10 @@ fn format_response(status: &str, response: &str) -> String {
     format!("## {}\n\n{}\n", status, response)
 }
 
+fn response_error(message: &str) -> String {
+    format!("## Error\n\n{}\n\n## Help\n{}", message, DESCRIPTION)
+}
+
 pub struct AlpacaActionRegex {}
 
 impl AlpacaActionRegex {
@@ -62,19 +64,13 @@ impl AlpacaActionTrait for AlpacaActionRegex {
 
         // Check if the 'pattern' argument is provided.
         if pattern.is_none() {
-            return format_response(
-                "Error",
-                "Missing 'pattern' parameter; please use `describe_action` to see the correct parameters.",
-            );
+            return response_error("Missing 'pattern' parameter");
         }
 
         // Check if the 'input' argument is provided.
         let input = object.get("input");
         if input.is_none() {
-            return format_response(
-                "Error",
-                "Missing 'input' parameter; please use `describe_action` to see the correct parameters.",
-            );
+            return response_error("Missing 'input' parameter.");
         }
 
         let pattern = pattern.unwrap();
@@ -83,11 +79,8 @@ impl AlpacaActionTrait for AlpacaActionRegex {
         let regex = match Regex::new(pattern) {
             Ok(re) => re,
             Err(e) => {
-                // Return error if regex pattern compilation fails
-                let error = json!({
-                    "error": format!("Invalid regex pattern: {}", e),
-                });
-                return format_response("Error", &AlpacaActions::blockify(&error));
+                let error = format!("Invalid regex pattern: {}", e);
+                return response_error(&error);
             }
         };
 

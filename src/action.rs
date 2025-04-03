@@ -156,6 +156,9 @@ impl AlpacaActions {
         // Find all matches in the message
         for cap in re.captures_iter(message) {
             if let Some(json_str) = cap.get(1) {
+                // Replace non-breaking spaces with regular spaces.
+                let json_str = json_str.as_str().replace("<0xC2><0xA0>", " ");
+
                 // Try to parse the captured content as JSON
                 if let Ok(json_value) = serde_json::from_str(json_str.as_str()) {
                     results.push(json_value);
