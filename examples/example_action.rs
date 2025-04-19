@@ -7,7 +7,7 @@ You are a helpful and friendly assistant. You excel at following instructions,
 answering questions, and working step-by-step through problems.
 
 You are proficient at using 'actions' like reading a file, listing the contents
-of a directory, or fetching a web-page. These actions help you collect information
+of a directory, or fetching a web-page. These 'actions' help you collect information
 that is external to you, allowing you to answer questions and complete tasks more
 quickly and more accurately than if you were to only use your internal knowledge alone.
 
@@ -21,7 +21,7 @@ that are available to you:
     "action": "list_actions"
 }
 ```
-
+### Action Tips
 - Don't assume the results of the action, end your turn and wait for the user to respond.
 - Do not invoke more than one action per turn.
 - The results of the 'action' will be returned by the user on the following turn.
@@ -167,8 +167,10 @@ async fn main() {
     // let model = "qwen2.5-coder:7b";
     // let model = "qwen2.5-coder:14b";
     // let model = "gemma2:9b";
-    let model = "gemma3:4b";
-    // let model = "gemma3:12b";
+    // let model = "gemma3:4b";
+    let model = "gemma3:12b";
+    // let model = "gemma3:12b-it-qat";
+    // let model = "granite3.3:8b";
     // let model = "deepseek-r1:7b";
     // let model = "deepseek-r1:8b";
     // let model = "deepseek-r1:14b";
@@ -185,6 +187,7 @@ async fn main() {
     println!("{}", query);
     session.user(query);
 
+    let mut step_count = 0;
     for _ in 0..11 {
         println!("=== [[** ASSISTANT **]] ----------------------------\n");
         let response = session
@@ -209,5 +212,9 @@ async fn main() {
             println!("\n=== [[** DONE **]] ---------------------------------\n");
             break;
         }
+
+        step_count += 1;
     }
+
+    println!("Total steps: {}", step_count);
 }

@@ -9,16 +9,10 @@ const DESCRIPTION: &str = r#"
 The 'regex' action allows you to perform regular expression operations on text.
 You can search for patterns in text and extract matches.
 
-Here is an example of how to invoke it with a single string:
-```json
-{
-    "action": "regex",
-    "pattern": "\\d+",
-    "input": "The year is 2025 and the month is 4."
-}
-```
+- Provide the regular expression pattern as the 'pattern' parameter.
+- Provide an array of strings as the 'input' parameter:
 
-You can also provide an array of strings as the 'input' parameter:
+Here is an example of how to invoke it:
 ```json
 {
     "action": "regex",
@@ -30,7 +24,7 @@ You can also provide an array of strings as the 'input' parameter:
 }
 ```
 
-This will return all matches of the pattern in the provided text(s).
+This will return all matches of the pattern in the provided input(s).
 "#;
 
 fn format_response(status: &str, response: &str) -> String {
@@ -85,27 +79,7 @@ impl AlpacaActionTrait for AlpacaActionRegex {
         };
 
         // Handle both cases: input as string or as array of strings
-        if let Some(text) = object["input"].as_str() {
-            // Case 1: 'input' is a single string
-            let matches: Vec<String> = regex
-                .find_iter(text)
-                .map(|m| m.as_str().to_string())
-                .collect();
-
-            let response = json!({
-                "matches": matches,
-                // "count": matches.len(),
-            });
-
-            let regex_block = AlpacaActions::blockify(&response);
-            let response_text = format!(
-                "Regular expression results for pattern '{}' in the provided input:\n{}",
-                pattern, &regex_block
-            );
-
-            format_response("Success", &response_text)
-        } else if let Some(texts) = object["input"].as_array() {
-            // Case 2: 'input' is an array of strings
+        if let Some(texts) = object["input"].as_array() {
             let mut all_results = Vec::new();
             let mut total_matches = 0;
 
@@ -119,10 +93,8 @@ impl AlpacaActionTrait for AlpacaActionRegex {
                     total_matches += matches.len();
 
                     all_results.push(json!({
-                        // "index": index,
                         "input": text,
                         "matches": matches,
-                        // "count": matches.len(),
                     }));
                 } else {
                     // If an element in the array is not a string, include it as an error
@@ -149,10 +121,7 @@ impl AlpacaActionTrait for AlpacaActionRegex {
             format_response("Success", &response_text)
         } else {
             // Neither a string nor an array was provided
-            format_response(
-                "Error",
-                "The 'text' parameter must be a string or an array of strings; please use `describe_action` to see the correct parameters.",
-            )
+            response_error("The 'input' parameter must be an array of strings")
         }
     }
 }
