@@ -2,7 +2,7 @@ use alpaca_rs::function::AlpacaFunctions;
 use alpaca_rs::function_dir::AlpacaFunctionDir;
 use alpaca_rs::function_read_file::AlpacaFunctionReadFile;
 use alpaca_rs::tool_dispatch::AlapacaToolDispatch;
-use ollie_rs::session::OllamaSession;
+use ollie_rs::OllamaSession;
 use std::io::{self, Write};
 
 pub const PROMPT_1: &str = r#"

@@ -1,5 +1,5 @@
 use alpaca_rs::action::AlpacaActions;
-use ollie_rs::session::OllamaSession;
+use ollie_rs::OllamaSession;
 use std::io::{self, Write};
 
 pub const SYS_PROMPT_2: &str = r#"
@@ -167,8 +167,9 @@ async fn main() {
     // let model = "qwen2.5-coder:7b";
     // let model = "qwen2.5-coder:14b";
     // let model = "gemma2:9b";
-    // let model = "gemma3:4b";
-    let model = "gemma3:12b";
+    let model = "gemma3:4b";
+    // let model = "gemma3:4b-it-qat";
+    // let model = "gemma3:12b";
     // let model = "gemma3:12b-it-qat";
     // let model = "granite3.3:8b";
     // let model = "deepseek-r1:7b";
@@ -197,8 +198,8 @@ async fn main() {
             .await
             .unwrap();
 
-        let response = response.unwrap();
-        let content = response.content().unwrap();
+        // let content = response.content().unwrap();
+        let content = response.text().unwrap();
 
         let mut action_count = 0;
         actions.invoke(content).map(|response| {
