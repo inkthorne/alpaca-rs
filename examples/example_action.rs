@@ -1,5 +1,5 @@
 use alpaca_rs::action::AlpacaActions;
-use ollie_rs::OllamaSession;
+use ollie_rs::{OllamaSession, XmlUtil};
 use std::io::{self, Write};
 
 pub const SYS_PROMPT_2: &str = r#"
@@ -21,11 +21,13 @@ that are available to you:
     "action": "list_actions"
 }
 ```
+
 ### Action Tips
 - Don't assume the results of the action, end your turn and wait for the user to respond.
 - Do not invoke more than one action per turn.
 - The results of the 'action' will be returned by the user on the following turn.
 - Don't forget to escape your backslashes in JSON strings. For example, use `\\` instead of `\`.
+- Put your JSON in a code block using triple backticks (```json) to ensure it is parsed correctly. 
 "#;
 
 pub const SYS_PROMPT_3: &str = r#"
@@ -160,28 +162,31 @@ fn streaming_print(content: &str) {
 #[tokio::main]
 async fn main() {
     let actions = AlpacaActions::new();
+    // let model = "devstral:24b"; // best coding agent so far
     // let model = "dolphin3:8b";
     // let model = "phi4";
     // let model = "llama3.1:8b";
     // let model = "qwen2.5:7b";
     // let model = "qwen2.5-coder:7b";
     // let model = "qwen2.5-coder:14b";
+    // let model = "qwen3:8b"; // solves in 2 steps
     // let model = "gemma2:9b";
-    let model = "gemma3:4b";
+    // let model = "gemma3:4b";
     // let model = "gemma3:4b-it-qat";
     // let model = "gemma3:12b";
     // let model = "gemma3:12b-it-qat";
     // let model = "granite3.3:8b";
     // let model = "deepseek-r1:7b";
-    // let model = "deepseek-r1:8b";
+    let model = "deepseek-r1:8b";
     // let model = "deepseek-r1:14b";
     // let model = "deepseek-coder-v2:16b";
     let mut session = OllamaSession::local(model);
     // let mut session = OllamaSession::new(model);
-    session.options().set_temperature(0.0);
+    session.options().set_temperature(0.1);
+    session.options().set_num_ctx(8192);
     // session.options().set_seed(9834);
 
-    let prompt = SYS_PROMPT_2;
+    let prompt = SYS_PROMPT_3;
     println!("{}", prompt);
     session.system(prompt);
     let query = QUERY_3;
@@ -198,11 +203,20 @@ async fn main() {
             .await
             .unwrap();
 
-        // let content = response.content().unwrap();
         let content = response.text().unwrap();
+        let cleaned = XmlUtil::remove_tag(&content, "think");
+        let text = if cleaned.is_some() {
+            &cleaned.unwrap()
+        } else {
+            content
+        };
+
+        println!("\n\n=== [[** ASSISTANT CLEANED **]] ---------------------------------");
+        println!("{}", text);
 
         let mut action_count = 0;
-        actions.invoke(content).map(|response| {
+
+        actions.invoke(text).map(|response| {
             println!("\n\n=== [[** USER **]] ---------------------------------");
             println!("{}", response);
             session.user(&response);
